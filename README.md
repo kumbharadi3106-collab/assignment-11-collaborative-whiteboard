@@ -1,38 +1,52 @@
-# 🎨 Assignment 11: Real-Time Collaborative Whiteboard & Canvas (Socket.io)
-> **Track:** Backend & Real-Time Web | **Level:** Advanced | **Estimated Time:** 7–9 Hours  
-> **Tech Stack:** Node.js, Express.js, Socket.io, HTML5 Canvas API, CORS
+# Assignment 11: Real-Time Collaborative Whiteboard & Canvas (Socket.io)
+
+**Student Name:** Aditya Kumbhar  
+**Roll No:** 187  
+**Track:** Backend & Real-Time Web  
+**Tech Stack:** Node.js, Express.js, Socket.io, HTML5 Canvas API, CORS, Dotenv  
 
 ---
 
-## 📌 1. Objective & Overview
+## 📌 Project Overview
 
-Build a high-performance **Real-Time Collaborative Multi-User Whiteboard Application** using **Node.js, Express.js, and Socket.io**. This assignment challenges students to synchronize continuous vector stroke streams, manage shared canvas draw history buffers in server memory, handle multi-user room partitioning (`roomId`), track live pointer/cursor coordinates across connected peers, and implement coordinated canvas actions such as `clear` and `undo`.
-
-### Key Learning Outcomes:
-- Handling high-frequency WebSocket event streams with minimal latency overhead.
-- Maintaining an in-memory stroke history buffer per room so new joiners immediately sync the existing drawing state.
-- Broadcasting cursor coordinate deltas to display live collaborator cursors in real time.
-- Designing state rollback algorithms (`draw:undo` and `draw:clear`).
-- Managing multi-tenant whiteboard rooms (`socket.join(boardId)`).
+This project is a **Real-Time Collaborative Multi-User Whiteboard Application** built using **Node.js, Express.js, and Socket.io**. It allows multiple users to join the same whiteboard room, draw synchronously in real time, view each other's live mouse cursors, undo previous continuous strokes, and clear the canvas across all connected peers.
 
 ---
 
-## 🛠️ 2. Tech Stack & Dependencies
+## ✨ Features
 
-```bash
-# Initialize Node.js project
-npm init -y
+- **Multi-Room Management:** Users can join isolated whiteboard rooms via query parameters (e.g., `?board=DESIGN_101`) or share an invite link.
+- **Real-Time Vector Stroke Synchronization:** Continuous drawing paths stream instantly across connected peers with minimal latency.
+- **In-Memory Board State & History Buffer:** New users immediately sync existing canvas drawings upon joining via `board:init`.
+- **Live Collaborator Cursor Tracking:** High-frequency cursor streaming shows peer mouse positions with custom name badges and colors.
+- **Undo & State Rollback:** Undo functionality rolls back the last continuous stroke action and syncs the canvas state for all participants.
+- **Canvas Reset:** Synchronized `board:clear` event wipes the whiteboard across all active users.
+- **Responsive Canvas & Toolbar:** Includes Pen and Eraser tools, quick color palette + custom color picker, stroke width slider, active collaborators avatars, and PNG export.
 
-# Install dependencies
-npm install express socket.io cors dotenv
+---
 
-# Install development dependencies
-npm install -D nodemon
+## 📁 Directory Structure
+
+```text
+Aditya Kumbhar 187, assignment 11/
+├── public/
+│   ├── index.html           # Full HTML5 Canvas collaborative interface
+│   ├── canvas.js            # Client-side drawing & socket event emitter
+│   └── styles.css           # Toolbars, color pickers & canvas layout
+├── sockets/
+│   ├── boardHandler.js      # Room join, stroke caching & canvas reset handlers
+│   └── cursorHandler.js     # Live cursor coordinate streaming
+├── server.js                # Express & Socket.io server bootstrap
+├── package.json
+├── .env
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🖌️ 3. Real-Time Canvas Event Protocol
+## 🖌️ Real-Time Canvas Event Protocol
 
 ### 🔄 Room & Session Events
 
@@ -47,10 +61,10 @@ npm install -D nodemon
 
 | Event Name | Direction | Payload Schema | Description |
 |---|:---:|---|---|
-| `draw:stroke` | `Client -> Server` | `{ "boardId": "...", "stroke": { "prevX": 120, "prevY": 80, "currX": 125, "currY": 85, "color": "#000", "size": 3 } }` | Client draws a line segment; server appends to room history |
-| `draw:broadcast` | `Server -> Room (broadcast.to)` | `{ "stroke": { ... } }` | Relays drawing stroke to all other participants in the room |
+| `draw:stroke` | `Client -> Server` | `{ "boardId": "...", "stroke": { "prevX": 120, "prevY": 80, "currX": 125, "currY": 85, "color": "#000", "size": 3, "strokeId": "..." } }` | Client draws a line segment; server appends to room history |
+| `draw:broadcast` | `Server -> Room` | `{ "stroke": { ... } }` | Relays drawing stroke to all other participants in the room |
 | `cursor:move` | `Client -> Server` | `{ "boardId": "...", "x": 140, "y": 95 }` | High-frequency mouse pointer sync |
-| `cursor:update` | `Server -> Room (broadcast.to)` | `{ "userId": "socket_id", "x": 140, "y": 95 }` | Relays peer cursor positions on screen |
+| `cursor:update` | `Server -> Room` | `{ "userId": "socket_id", "username": "Alice", "color": "#ff5722", "x": 140, "y": 95 }` | Relays peer cursor positions on screen |
 | `board:clear` | `Client -> Server` | `{ "boardId": "DESIGN_101" }` | Clears all strokes for this room |
 | `board:cleared` | `Server -> Room` | `{ "clearedBy": "Alice" }` | Notifies all room peers to wipe their local canvas |
 | `draw:undo` | `Client -> Server` | `{ "boardId": "DESIGN_101" }` | Removes the last continuous stroke action |
@@ -58,64 +72,35 @@ npm install -D nodemon
 
 ---
 
-## 🏗️ 4. Server-Side Board State Architecture
+## 🚀 Setup & Installation
 
-```javascript
-// In-Memory Whiteboard Store
-const boardRooms = {
-  "DESIGN_101": {
-    boardId: "DESIGN_101",
-    strokes: [], // Array of stroke objects
-    users: {}    // Map of socketId -> { username, color, cursor: { x, y } }
-  }
-};
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Environment Configuration
+Create a `.env` file (or copy from `.env.example`):
+```env
+PORT=5000
+```
+
+### 3. Start Server
+```bash
+# Start server with node
+npm start
+
+# Or run with nodemon in development mode
+npm run dev
 ```
 
 ---
 
-## 📁 5. Directory Structure
+## 🧪 Testing & Validation
 
-```text
-assignment-11-whiteboard-socket/
-├── public/
-│   ├── index.html           # Full HTML5 Canvas collaborative interface
-│   ├── canvas.js            # Client-side drawing & socket event emitter
-│   └── styles.css           # Toolbars, color pickers & canvas layout
-├── sockets/
-│   ├── boardHandler.js      # Room join, stroke caching & canvas reset handlers
-│   └── cursorHandler.js     # Live cursor coordinate streaming
-├── server.js                # Express & Socket.io server bootstrap
-├── package.json
-└── README.md
-```
-
----
-
-## 🧪 6. Testing & Validation
-
-1. Start server at `http://localhost:5000`.
-2. Open two browser windows side-by-side on `http://localhost:5000?board=demo`.
-3. Draw in Window 1: verify that Window 2 renders the exact stroke in real time without lag.
-4. Move mouse in Window 1: verify a colored collaborator cursor moves smoothly in Window 2.
-5. Open a third browser window in an incognito tab with the same board URL: verify it immediately loads all prior strokes from `board:init`.
-6. Click **Clear Canvas** in Window 1: verify both Window 2 and 3 instantly clear.
-
----
-
-## 📊 7. Grading Rubric (100 Marks)
-
-| Evaluation Component | Marks |
-|---|:---:|
-| **Socket.io Connection & Multi-Room Management** | 25 |
-| **Real-Time Stroke Streaming & History Buffer Synchronization** | 30 |
-| **Live Multi-User Collaborator Cursor Tracking** | 15 |
-| **Canvas Reset (`board:clear`) & Undo Implementation** | 15 |
-| **Client UI Smoothness, Responsive Canvas & Code Organization** | 15 |
-| **Total Marks** | **100** |
-
----
-
-## 📤 8. Submission Guidelines
-
-- Submit your GitHub repository: `itm-assignment-11-whiteboard-socket`.
-- Provide a link to a live demo or a screen recording displaying 2 browser windows drawing together simultaneously.
+1. Start the server and visit `http://localhost:5000?board=demo&user=Alice`.
+2. Open a second browser window at `http://localhost:5000?board=demo&user=Bob`.
+3. **Real-time Drawing:** Draw in Window 1 and watch it appear in Window 2 simultaneously.
+4. **Live Cursors:** Move mouse in Window 1; verify Bob's screen displays Alice's colored cursor with her name badge.
+5. **State Sync for Late Joiners:** Open a third window/incognito tab at `http://localhost:5000?board=demo`; verify all existing strokes load immediately via `board:init`.
+6. **Undo & Clear:** Click **Undo** to revert the last continuous stroke; click **Clear** to wipe the canvas across all connected windows.
